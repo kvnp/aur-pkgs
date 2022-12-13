@@ -1,0 +1,79 @@
+diff --git a/instfiles/xrdp-sesman.service.in b/instfiles/xrdp-sesman.service.in
+index fcd74094..0da0e7c7 100644
+--- a/instfiles/xrdp-sesman.service.in
++++ b/instfiles/xrdp-sesman.service.in
+@@ -7,12 +7,10 @@ BindsTo=xrdp.service
+ 
+ [Service]
+ Type=forking
+-PIDFile=@localstatedir@/run/xrdp-sesman.pid
+-EnvironmentFile=-@sysconfdir@/sysconfig/xrdp
+-EnvironmentFile=-@sysconfdir@/default/xrdp
+-ExecStart=@sbindir@/xrdp-sesman $SESMAN_OPTIONS
+-ExecStop=@sbindir@/xrdp-sesman $SESMAN_OPTIONS --kill
+-ExecReload=@sbindir@/xrdp-sesman $SESMAN_OPTIONS --reload
++PIDFile=/run/xrdp-sesman.pid
++ExecStart=@sbindir@/xrdp-sesman
++ExecStop=@sbindir@/xrdp-sesman --kill
++ExecReload=@sbindir@/xrdp-sesman --reload
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/instfiles/xrdp.service.in b/instfiles/xrdp.service.in
+index 576c1c25..1b557974 100644
+--- a/instfiles/xrdp.service.in
++++ b/instfiles/xrdp.service.in
+@@ -6,11 +6,9 @@ After=network.target xrdp-sesman.service
+ 
+ [Service]
+ Type=forking
+-PIDFile=@localstatedir@/run/xrdp.pid
+-EnvironmentFile=-@sysconfdir@/sysconfig/xrdp
+-EnvironmentFile=-@sysconfdir@/default/xrdp
+-ExecStart=@sbindir@/xrdp $XRDP_OPTIONS
+-ExecStop=@sbindir@/xrdp $XRDP_OPTIONS --kill
++PIDFile=/run/xrdp.pid
+++ExecStart=@sbindir@/xrdp
+++ExecStop=@sbindir@/xrdp --kill
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/sesman/sesman.ini.in b/sesman/sesman.ini.in
+index 746c49a5..76e1d893 100644
+--- a/sesman/sesman.ini.in
++++ b/sesman/sesman.ini.in
+@@ -118,7 +118,7 @@ EnableSyslog=true
+ ; CentOS 8              :  param=/usr/libexec/Xorg
+ ; FreeBSD (from 2022Q4) :  param=/usr/local/libexec/Xorg
+ ;
+-param=Xorg
++param=/usr/lib/Xorg
+ ; Leave the rest parameters as-is unless you understand what will happen.
+ param=-config
+ param=xrdp/xorg.conf
+diff --git a/sesman/startwm.sh b/sesman/startwm.sh
+index 4bbb2c19..b225baa9 100755
+--- a/sesman/startwm.sh
++++ b/sesman/startwm.sh
+@@ -63,6 +63,21 @@ wm_start()
+     export LANG LANGUAGE
+   fi
+ 
++  # arch user
++  if [ -r ~/.xinitrc ]; then
++    pre_start
++    . ~/.xinitrc
++    post_start
++    exit 0
++  fi
++  # arch
++  if [ -r /etc/X11/xinit/xinitrc ]; then
++    pre_start
++    . /etc/X11/xinit/xinitrc
++    post_start
++    exit 0
++  fi
++  
+   # debian
+   if [ -r /etc/X11/Xsession ]; then
+     pre_start
